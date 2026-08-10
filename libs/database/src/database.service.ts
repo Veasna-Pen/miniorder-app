@@ -5,27 +5,26 @@ import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
-    private pool: Pool;
-    public db: NodePgDatabase<typeof schema>;
+  private pool: Pool;
+  public db: NodePgDatabase<typeof schema>;
 
-    constructor() {
-        const connectionString = process.env.DATABASE_URL;
+  constructor() {
+    const connectionString = process.env.DATABASE_URL;
 
-        this.pool = new Pool({
-            connectionString,
-        });
+    this.pool = new Pool({
+      connectionString,
+    });
 
-        this.db = drizzle(this.pool, { schema });
+    this.db = drizzle(this.pool, { schema });
 
-        console.log('Database connected successfully');
-    }
+    console.log('Database connected successfully');
+  }
 
-    async onModuleDestroy() {
-        await this.pool.end();
-    }
+  async onModuleDestroy() {
+    await this.pool.end();
+  }
 
-    get schema() {
-        return schema;
-    }
-
+  get schema() {
+    return schema;
+  }
 }
