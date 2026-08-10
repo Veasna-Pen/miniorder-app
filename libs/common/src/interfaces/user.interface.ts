@@ -16,3 +16,9 @@ export interface IUser {
 export interface IAuthUser extends Pick<IUser, 'id' | 'email'> {
   role: EUserRole;
 }
+
+/** Claims carried by the access token issued on login. */
+export interface IJwtPayload {
+  sub: string;
+  email: string;
+}

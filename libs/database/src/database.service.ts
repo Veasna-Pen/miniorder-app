@@ -9,7 +9,7 @@ export class DatabaseService implements OnModuleDestroy {
   public db: NodePgDatabase<typeof schema>;
 
   constructor() {
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = "postgresql://miniorder:password@localhost:5432/miniorder?schema=public";
 
     this.pool = new Pool({
       connectionString,

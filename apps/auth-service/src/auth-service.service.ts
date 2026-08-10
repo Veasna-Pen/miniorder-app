@@ -63,7 +63,7 @@ export class AuthServiceService implements OnModuleInit {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const token = this.jwtService.sign({ userId: user.id, email: user.email });
+    const token = this.jwtService.sign({ sub: user.id, email: user.email });
 
     this.kafkaClient.emit(KAFKA_TOPICS.USER_LOGGED_IN, {
       userId: user.id,
@@ -93,7 +93,7 @@ export class AuthServiceService implements OnModuleInit {
       .limit(1);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UnauthorizedException('User not found');
     }
 
     return user;

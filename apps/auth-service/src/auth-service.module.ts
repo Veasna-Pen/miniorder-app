@@ -6,14 +6,15 @@ import { DatabaseModule } from '@app/database';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
+import { JWT_EXPIRES_IN, JWT_SECRET } from '@app/common';
 
 @Module({
   imports: [KafkaModule.register('auth-service-group'),
     DatabaseModule,
     PassportModule,
   JwtModule.register({
-    secret: process.env.JWT_SECRET || 'default_secret',
-    signOptions: { expiresIn: '1h' },
+    secret: JWT_SECRET,
+    signOptions: { expiresIn: JWT_EXPIRES_IN },
   })
   ],
   controllers: [AuthServiceController],
