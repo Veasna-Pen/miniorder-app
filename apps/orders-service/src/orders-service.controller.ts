@@ -1,12 +1,18 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request } from '@nestjs/common';
 import { OrdersServiceService } from './orders-service.service';
+import { MenuItemsDto } from '@app/common';
 
 @Controller()
 export class OrdersServiceController {
-  constructor(private readonly ordersServiceService: OrdersServiceService) {}
+  constructor(private readonly ordersServiceService: OrdersServiceService) { }
 
-  @Get()
-  getHello(): string {
-    return this.ordersServiceService.getHello();
+  @Post('menu-items')
+  addMenuItem(@Body() dto: MenuItemsDto) {
+    return this.ordersServiceService.addMenuItem(dto);
+  }
+
+  @Get('menu-items')
+  getMenuItems() {
+    return this.ordersServiceService.getMenuItem();
   }
 }
