@@ -6,8 +6,8 @@ export const KAFKA_CONSUMER_GROUP =
 // Kafka topics
 export const KAFKA_TOPICS = {
   // Auth events
-  USER_REGISTERED: 'auth.user.registered',
-  USER_LOGGED_IN: 'auth.user.loggedin',
+  USER_REGISTERED: 'user.registered',
+  USER_LOGGED_IN: 'user.loggedin',
 
   // Orders events
   ORDER_CREATED: 'order.created',
