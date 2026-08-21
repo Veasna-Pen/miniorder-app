@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Headers,
   Param,
@@ -14,8 +15,19 @@ import { CreateOrderDto, MenuItemsDto } from '@app/common';
 export class OrdersServiceController {
   constructor(private readonly ordersServiceService: OrdersServiceService) { }
 
+  @Get('health')
+  getHealth() {
+    return this.ordersServiceService.getHealth();
+  }
+
   @Post('menu-items')
-  addMenuItem(@Body() dto: MenuItemsDto) {
+  addMenuItem(
+    @Headers('x-user-role') role: string,
+    @Body() dto: MenuItemsDto,
+  ) {
+    if (role !== 'ADMIN') {
+      throw new ForbiddenException('Only admins can create menu items');
+    }
     return this.ordersServiceService.addMenuItem(dto);
   }
 
@@ -23,6 +35,7 @@ export class OrdersServiceController {
   getMenuItems() {
     return this.ordersServiceService.getMenuItem();
   }
+
 
   @Get('orders/my-orders')
   getMyOrders(@Headers('x-user-id') userId: string) {

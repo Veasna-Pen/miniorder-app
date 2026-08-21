@@ -30,6 +30,10 @@ export class OrdersServiceService implements OnModuleInit {
     await this.kafkaClient.connect();
   }
 
+  getHealth() {
+    return { status: 'ok', service: 'orders-service', timestamp: new Date().toISOString() };
+  }
+
   async addMenuItem(menuItemsDto: MenuItemsDto) {
     const [menuItem] = await this.dbService.db
       .insert(menu_items)
@@ -42,8 +46,10 @@ export class OrdersServiceService implements OnModuleInit {
   async getMenuItem() {
     return this.dbService.db
       .select()
-      .from(menu_items);
+      .from(menu_items)
+      .where(eq(menu_items.available, true));
   }
+
 
   async getMyOrders(userId: string) {
     const userOrders = await this.dbService.db

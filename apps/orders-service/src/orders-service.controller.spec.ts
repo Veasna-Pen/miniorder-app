@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersServiceController } from './orders-service.controller';
 import { OrdersServiceService } from './orders-service.service';
@@ -9,6 +9,7 @@ describe('OrdersServiceController', () => {
 
   beforeEach(async () => {
     mockService = {
+      getHealth: jest.fn(),
       addMenuItem: jest.fn(),
       getMenuItem: jest.fn(),
       createOrder: jest.fn(),
@@ -33,6 +34,47 @@ describe('OrdersServiceController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  describe('getHealth', () => {
+    it('should return health status', () => {
+      const healthStatus = { status: 'ok', service: 'orders-service', timestamp: '2026-08-21T07:00:00.000Z' };
+      (mockService.getHealth as jest.Mock).mockReturnValue(healthStatus);
+
+      expect(controller.getHealth()).toBe(healthStatus);
+    });
+  });
+
+  describe('addMenuItem', () => {
+    it('should throw ForbiddenException if user is not an ADMIN', async () => {
+      expect(() =>
+        controller.addMenuItem('CUSTOMER', { name: 'Latte', price: 300 }),
+      ).toThrow(ForbiddenException);
+    });
+
+    it('should call addMenuItem when user is an ADMIN', async () => {
+      const dto = { name: 'Latte', price: 300 };
+      const expectedResponse = { message: 'Menu Item created successfully', menu_item: dto as any };
+      (mockService.addMenuItem as jest.Mock).mockResolvedValue(expectedResponse);
+
+      const result = await controller.addMenuItem('ADMIN', dto);
+
+      expect(mockService.addMenuItem).toHaveBeenCalledWith(dto);
+      expect(result).toBe(expectedResponse);
+    });
+  });
+
+  describe('getMenuItems', () => {
+    it('should return menu items list', async () => {
+      const items = [{ id: '1', name: 'Latte', price: 300, available: true }];
+      (mockService.getMenuItem as jest.Mock).mockResolvedValue(items);
+
+      const result = await controller.getMenuItems();
+
+      expect(mockService.getMenuItem).toHaveBeenCalled();
+      expect(result).toBe(items);
+    });
+  });
+
 
   describe('getMyOrders', () => {
     it('should throw BadRequestException if x-user-id header is missing', async () => {

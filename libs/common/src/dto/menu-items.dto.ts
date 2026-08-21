@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, Min, IsInt, IsOptional } from 'class-validator'
+import { IsString, IsNotEmpty, Min, IsInt, IsOptional, IsBoolean } from 'class-validator';
 
 export class MenuItemsDto {
     @IsString({ message: 'Name must be a string' })
@@ -9,7 +9,11 @@ export class MenuItemsDto {
     @IsOptional()
     description: string;
 
-    @IsInt()
+    @IsInt({ message: 'Price must be an integer' })
     @Min(0, { message: 'Price must be at least 0' })
     price: number;
-}
+
+    @IsBoolean({ message: 'Available must be a boolean' })
+    @IsOptional()
+    available?: boolean;
+}
