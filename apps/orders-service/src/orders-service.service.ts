@@ -3,14 +3,19 @@ import { DatabaseService, menu_items, order_items, orders } from '@app/database'
 import { KAFKA_SERVICE, KAFKA_TOPICS } from '@app/kafka';
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+
+
 
 @Injectable()
 export class OrdersServiceService implements OnModuleInit {
@@ -38,6 +43,111 @@ export class OrdersServiceService implements OnModuleInit {
     return this.dbService.db
       .select()
       .from(menu_items);
+  }
+
+  async getMyOrders(userId: string) {
+    const userOrders = await this.dbService.db
+      .select()
+      .from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(desc(orders.createdAt));
+
+    if (userOrders.length === 0) {
+      return [];
+    }
+
+    const orderIds = userOrders.map((o) => o.id);
+    const items = await this.dbService.db
+      .select()
+      .from(order_items)
+      .where(inArray(order_items.orderId, orderIds));
+
+    const itemsByOrderId = new Map<string, typeof items>();
+    for (const item of items) {
+      const list = itemsByOrderId.get(item.orderId) || [];
+      list.push(item);
+      itemsByOrderId.set(item.orderId, list);
+    }
+
+    return userOrders.map((order) => ({
+      ...order,
+      items: itemsByOrderId.get(order.id) || [],
+    }));
+  }
+
+  async getOrderById(orderId: string, userId: string) {
+    const [order] = await this.dbService.db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to view this order');
+    }
+
+    const items = await this.dbService.db
+      .select()
+      .from(order_items)
+      .where(eq(order_items.orderId, order.id));
+
+    return {
+      ...order,
+      items,
+    };
+  }
+
+  async payOrder(orderId: string, userId: string) {
+    const [order] = await this.dbService.db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to pay for this order');
+    }
+
+    if (order.status === 'PAID') {
+      throw new ConflictException('Order has already been paid');
+    }
+
+    if (order.status !== 'PENDING') {
+      throw new BadRequestException(`Cannot pay order with status ${order.status}`);
+    }
+
+    const [updatedOrder] = await this.dbService.db
+      .update(orders)
+      .set({
+        status: 'PAID',
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    this.kafkaClient.emit(KAFKA_TOPICS.ORDER_PAID, {
+      eventId: randomUUID(),
+      schemaVersion: 1,
+      occurredAt: new Date().toISOString(),
+      orderId: updatedOrder.id,
+      userId: updatedOrder.userId,
+      totalPrice: updatedOrder.totalPrice,
+    });
+
+    this.logger.log(`Order ${updatedOrder.id} paid by user ${userId}`);
+
+    return {
+      message: 'Order paid successfully',
+      order: updatedOrder,
+    };
   }
 
   async createOrder(userId: string, idempotencyKey: string, dto: CreateOrderDto) {
@@ -155,4 +265,5 @@ export class OrdersServiceService implements OnModuleInit {
     };
   }
 }
+
 

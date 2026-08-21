@@ -12,6 +12,9 @@ describe('OrdersServiceController', () => {
       addMenuItem: jest.fn(),
       getMenuItem: jest.fn(),
       createOrder: jest.fn(),
+      getMyOrders: jest.fn(),
+      getOrderById: jest.fn(),
+      payOrder: jest.fn(),
     };
 
     const app: TestingModule = await Test.createTestingModule({
@@ -30,6 +33,56 @@ describe('OrdersServiceController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  describe('getMyOrders', () => {
+    it('should throw BadRequestException if x-user-id header is missing', async () => {
+      expect(() => controller.getMyOrders('')).toThrow(BadRequestException);
+    });
+
+    it('should call getMyOrders with userId and return results', async () => {
+      const mockOrders = [{ id: 'order-1', userId: 'user-123', items: [] }];
+      (mockService.getMyOrders as jest.Mock).mockResolvedValue(mockOrders);
+
+      const result = await controller.getMyOrders('user-123');
+
+      expect(mockService.getMyOrders).toHaveBeenCalledWith('user-123');
+      expect(result).toBe(mockOrders);
+    });
+  });
+
+  describe('getOrderById', () => {
+    it('should throw BadRequestException if x-user-id header is missing', async () => {
+      expect(() => controller.getOrderById('order-1', '')).toThrow(BadRequestException);
+    });
+
+    it('should call getOrderById with id and userId', async () => {
+      const mockOrder = { id: 'order-1', userId: 'user-123', items: [] };
+      (mockService.getOrderById as jest.Mock).mockResolvedValue(mockOrder);
+
+      const result = await controller.getOrderById('order-1', 'user-123');
+
+      expect(mockService.getOrderById).toHaveBeenCalledWith('order-1', 'user-123');
+      expect(result).toBe(mockOrder);
+    });
+  });
+
+  describe('payOrder', () => {
+    it('should throw BadRequestException if x-user-id header is missing', async () => {
+      expect(() => controller.payOrder('order-1', '')).toThrow(BadRequestException);
+    });
+
+    it('should call payOrder with id and userId', async () => {
+      const mockResponse = { message: 'Order paid successfully', order: { id: 'order-1', status: 'PAID' } };
+      (mockService.payOrder as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await controller.payOrder('order-1', 'user-123');
+
+      expect(mockService.payOrder).toHaveBeenCalledWith('order-1', 'user-123');
+      expect(result).toBe(mockResponse);
+    });
+  });
+
+
 
   describe('createOrder', () => {
     it('should throw BadRequestException if x-user-id header is missing', async () => {
@@ -60,4 +113,5 @@ describe('OrdersServiceController', () => {
     });
   });
 });
+
 

@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Headers,
+  Param,
   Post,
 } from '@nestjs/common';
 import { OrdersServiceService } from './orders-service.service';
@@ -21,6 +22,36 @@ export class OrdersServiceController {
   @Get('menu-items')
   getMenuItems() {
     return this.ordersServiceService.getMenuItem();
+  }
+
+  @Get('orders/my-orders')
+  getMyOrders(@Headers('x-user-id') userId: string) {
+    if (!userId) {
+      throw new BadRequestException('x-user-id header is required');
+    }
+    return this.ordersServiceService.getMyOrders(userId);
+  }
+
+  @Get('orders/:id')
+  getOrderById(
+    @Param('id') id: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('x-user-id header is required');
+    }
+    return this.ordersServiceService.getOrderById(id, userId);
+  }
+
+  @Post('orders/:id/pay')
+  payOrder(
+    @Param('id') id: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('x-user-id header is required');
+    }
+    return this.ordersServiceService.payOrder(id, userId);
   }
 
   @Post('orders')
